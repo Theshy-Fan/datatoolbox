@@ -1,9 +1,16 @@
 "use client";
 
-import { useRef } from "react";
-import Editor, { type OnMount, type OnChange } from "@monaco-editor/react";
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+
+const MonacoEditorInner = dynamic(
+  () => import("./MonacoEditorInner").then((mod) => mod.MonacoEditorInner),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[300px] w-full" />,
+  }
+);
 
 interface CodeEditorProps {
   value: string;
@@ -26,17 +33,6 @@ export function CodeEditor({
   language = "json",
   minimap = false,
 }: CodeEditorProps) {
-  const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
-
-  const handleMount: OnMount = (editor) => {
-    editorRef.current = editor;
-    editor.focus();
-  };
-
-  const handleChange: OnChange = (value) => {
-    onChange?.(value || "");
-  };
-
   return (
     <div className={cn("relative", className)}>
       <div
@@ -45,30 +41,13 @@ export function CodeEditor({
           error && "border-destructive"
         )}
       >
-        <Editor
-          height="300px"
-          language={language}
+        <MonacoEditorInner
           value={value}
-          onChange={handleChange}
-          onMount={handleMount}
-          loading={
-            <Skeleton className="h-[300px] w-full" />
-          }
-          options={{
-            readOnly,
-            minimap: { enabled: minimap },
-            fontSize: 14,
-            fontFamily: "var(--font-geist-mono)",
-            lineNumbers: "on",
-            roundedSelection: true,
-            scrollBeyondLastLine: false,
-            automaticLayout: true,
-            tabSize: 2,
-            wordWrap: "on",
-            placeholder,
-            domReadOnly: readOnly,
-          }}
-          theme="vs-dark"
+          onChange={onChange}
+          language={language}
+          readOnly={readOnly}
+          minimap={minimap}
+          placeholder={placeholder}
         />
       </div>
       {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
